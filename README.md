@@ -14,3 +14,5 @@ Tienda de ropa para proyecto de la materia "Software libre"
 - Py nombre.Py
 - Py -m pip install nombre
 - Pyodbc
+
+$ git remote add origin https://github.com/Yanet1003/https-github.com-juankmanca-TiendaRopa.git
