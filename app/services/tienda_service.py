@@ -16,7 +16,7 @@ class TiendaService:
         usuario = UsuarioRepository.crear_usuario(
             self.db, nombre, email, contrasena, telefono, rol_id
         )
-        print(f"✅ Usuario creado con ID {usuario.UsuarioID}")
+        print(f"Usuario creado con ID {usuario.UsuarioID}")
 
     def listar_usuarios(self):
         usuarios = UsuarioRepository.listar_usuarios(self.db)
