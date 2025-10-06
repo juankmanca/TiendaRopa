@@ -158,3 +158,20 @@ CREATE TABLE Envios (
     PRIMARY KEY (EnvioID),
     FOREIGN KEY (PedidoID) REFERENCES Pedidos(PedidoID)
 );
+
+INSERT INTO `roles` (`RolID`, `Nombre`) VALUES ('1', 'Admin');
+
+INSERT INTO Categorias (NombreCategoria, Descripcion) VALUES
+('Camisetas', 'Ropa superior casual para hombre y mujer.'),
+('Pantalones', 'Prendas inferiores de diferentes materiales y estilos.'),
+('Chaquetas', 'Ropa exterior para clima frío o lluvioso.'),
+('Zapatos', 'Calzado formal, casual y deportivo.'),
+('Accesorios', 'Gafas, cinturones, relojes, y otros complementos.');
+
+INSERT INTO Marcas (NombreMarca, PaisOrigen) VALUES
+('Nike', 'Estados Unidos'),
+('Adidas', 'Alemania'),
+('Puma', 'Alemania'),
+('Levi’s', 'Estados Unidos'),
+('Zara', 'España'),
+('H&M', 'Suecia');

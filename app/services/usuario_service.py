@@ -1,33 +1,12 @@
-<<<<<<< HEAD
-from app.db import SessionLocal
-from app.repositories.usuarios_repo import usuarioRepository
-=======
 # app/services/usuario_service.py
 from app.db import SessionLocal
 from app.repositories.usuario_repo import UsuarioRepository
->>>>>>> backup
 
 class UsuarioService:
     def __init__(self):
         self.db = SessionLocal()
 
     def crear_usuario(self):
-<<<<<<< HEAD
-        print("\n=== Crear usuario ===")
-        nombre = input("Nombre: ")
-        descripcion = input("Descripción: ")
-        telefono = float(input("telefono: "))
-        contraseña = int(input("contraseña: "))
-        rolid = int(input("rolID: "))
-        
-
-        prod = UsuarioService(
-            self.db, nombre, descripcion, telefono, contraseña, rolid
-        )
-        print(f"usuario creado  {UsuarioService.crear_usuario}")
-
-   
-=======
         print("\n=== Crear nuevo usuario ===")
         nombre = input("Nombre: ")
         email = input("Email: ")
@@ -73,4 +52,3 @@ class UsuarioService:
             print("Usuario y cliente eliminado correctamente.")
         else:
             print("Usuario no encontrado.")
->>>>>>> backup
