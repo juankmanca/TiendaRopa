@@ -13,6 +13,6 @@ class Producto(Base):
     CategoriaID = Column(Integer, ForeignKey("Categorias.CategoriaID"), nullable=False)
     MarcaID = Column(Integer, ForeignKey("Marcas.MarcaID"), nullable=False)
 
-    # ✅ Referencia al nombre de la clase, no al nombre de la tabla
+    # Referencia al nombre de la clase, no al nombre de la tabla
     categoria = relationship("Categoria", back_populates="productos")
     marca = relationship("Marca", back_populates="productos")
