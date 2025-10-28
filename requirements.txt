@@ -1,3 +1,5 @@
 SQLAlchemy
 pymysql
-python-dotenv
+flask
+PyJWT
+pycryptodome

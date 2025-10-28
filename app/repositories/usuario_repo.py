@@ -26,6 +26,7 @@ class UsuarioRepository:
 
     @staticmethod
     def obtener_todos(db: Session):
+        print("Listando repo...")
         return db.query(Usuario).all()
 
     @staticmethod
