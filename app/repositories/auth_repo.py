@@ -30,6 +30,13 @@ def login(email: str, password: str) -> dict | None:
         with conn.cursor() as cur:
             cur.execute("CALL sp_login(%s, %s)", (email, pw_hash))
             row = cur.fetchone()
+            if not row:
+                return None
+            # intentar obtener ClienteID asociado si existe
+            cur.execute("SELECT ClienteID FROM Clientes WHERE UsuarioID = %s LIMIT 1", (row.get("UsuarioID"),))
+            cliente = cur.fetchone()
+            if cliente and cliente.get("ClienteID") is not None:
+                row["ClienteID"] = cliente.get("ClienteID")
             return row
     finally:
         conn.close()

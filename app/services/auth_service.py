@@ -11,7 +11,6 @@ class AuthService:
         user = auth_repo.login(email, password)
         if not user:
             return None
-
         token = self._create_token(user)
         return {"access_token": token}
 
@@ -25,14 +24,16 @@ class AuthService:
         user = auth_repo.login(email, password)
         if not user:
             return None
-
+        # si create_user devolvió ClienteID, lo preferimos; sino _create_token consultará user
         token = self._create_token(user)
         return {"access_token": token}
 
     def _create_token(self, user: dict) -> str:
         exp = datetime.utcnow() + timedelta(hours=JWT_EXP_HOURS)
         payload = {
-            "sub": user.get("UsuarioID"),
+            # 'sub' should be a string per PyJWT expectations
+            "sub": str(user.get("UsuarioID")) if user.get("UsuarioID") is not None else None,
+            "cliente_id": user.get("ClienteID"),
             "nombre": user.get("Nombre"),
             "email": user.get("Email"),
             "rol": user.get("RolID"),
