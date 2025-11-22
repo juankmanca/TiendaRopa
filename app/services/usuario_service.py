@@ -6,19 +6,18 @@ class UsuarioService:
         self.db = SessionLocal()
 
     def crear_usuario(self, data):
-        usuario = UsuarioRepository.crear_usuario(
+        res = UsuarioRepository.crear_usuario(
             self.db,
             data["nombre"],
             data["email"],
             data["contrasena"],
-            data["telefono"]
+            data.get("telefono"),
         )
-        return {
-            "UsuarioID": usuario.UsuarioID,
-            "Nombre": usuario.Nombre,
-            "Email": usuario.Email,
-            "Telefono": usuario.Telefono,
-        }
+        # res puede incluir {'UsuarioID': id, 'ClienteID': id}
+        usuario_id = None
+        if isinstance(res, dict):
+            usuario_id = res.get("UsuarioID") or res.get("UsuarioId")
+        return {"UsuarioID": usuario_id}
 
     def listar_usuarios(self):
         print("Listando service...")
@@ -26,10 +25,11 @@ class UsuarioService:
         print("Usuarios obtenidos:", usuarios)
         return [
             {
-                "UsuarioID": u.UsuarioID,
-                "Nombre": u.Nombre,
-                "Email": u.Email,
-                "Telefono": u.Telefono,
+                "UsuarioID": u.get("UsuarioID"),
+                "ClienteID": u.get("ClienteID"),
+                "Nombre": u.get("Nombre"),
+                "Email": u.get("Email"),
+                "Telefono": u.get("Telefono"),
             }
             for u in usuarios
         ]
@@ -40,15 +40,15 @@ class UsuarioService:
             usuario_id,
             Nombre=data.get("nombre"),
             Email=data.get("email"),
-            Telefono=data.get("telefono")
+            Telefono=data.get("telefono"),
         )
         if not usuario:
             return None
         return {
-            "UsuarioID": usuario.UsuarioID,
-            "Nombre": usuario.Nombre,
-            "Email": usuario.Email,
-            "Telefono": usuario.Telefono,
+            "UsuarioID": usuario.get("UsuarioID"),
+            "Nombre": usuario.get("Nombre"),
+            "Email": usuario.get("Email"),
+            "Telefono": usuario.get("Telefono"),
         }
 
     def eliminar_usuario(self, usuario_id):

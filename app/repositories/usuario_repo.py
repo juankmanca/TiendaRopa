@@ -1,63 +1,80 @@
-from sqlalchemy.orm import Session
-from app.models.usuarios import Usuario
-from app.models.clientes import Cliente
+import pymysql
+from pymysql.cursors import DictCursor
+from app.config import DB_USER, DB_PASS, DB_HOST, DB_NAME
+from app.repositories.auth_repo import _hash_password
+
+
+def _get_connection():
+    return pymysql.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME,
+        cursorclass=DictCursor,
+        autocommit=True,
+    )
+
 
 class UsuarioRepository:
 
     @staticmethod
-    def crear_usuario(db: Session, nombre: str, email: str, contrasena: str, telefono: str) -> Usuario:
-        usuario = Usuario(
-            Nombre=nombre,
-            Email=email,
-            Contrasena=contrasena,
-            Telefono=telefono,
-            RolID=1  # Por ahora, siempre será 1: rol Admin
-        )
-        db.add(usuario)
-        db.commit()
-        db.refresh(usuario)
-
-        # Crear registro asociado en Clientes
-        cliente = Cliente(UsuarioID=usuario.UsuarioID)
-        db.add(cliente)
-        db.commit()
-
-        return usuario
+    def crear_usuario(db, nombre: str, email: str, contrasena: str, telefono: str):
+        pw_hash = _hash_password(contrasena)
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_create_user_with_cliente(%s,%s,%s,%s, %s)", (nombre, email, pw_hash, telefono, 1))
+                return cur.fetchone()
+        finally:
+            conn.close()
 
     @staticmethod
-    def obtener_todos(db: Session):
-        print("Listando repo...")
-        return db.query(Usuario).all()
+    def obtener_todos(db):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_get_all_users()")
+                return cur.fetchall()
+        finally:
+            conn.close()
 
     @staticmethod
-    def obtener_por_id(db: Session, usuario_id: int):
-        return db.query(Usuario).filter(Usuario.UsuarioID == usuario_id).first()
+    def obtener_por_id(db, usuario_id: int):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_get_user_by_id(%s)", (usuario_id,))
+                return cur.fetchone()
+        finally:
+            conn.close()
 
     @staticmethod
-    def actualizar_usuario(db: Session, usuario_id: int, **datos):
-        usuario = db.query(Usuario).filter(Usuario.UsuarioID == usuario_id).first()
-        if not usuario:
-            return None
-
-        for campo, valor in datos.items():
-            if hasattr(usuario, campo) and valor is not None:
-                setattr(usuario, campo, valor)
-
-        db.commit()
-        db.refresh(usuario)
-        return usuario
+    def actualizar_usuario(db, usuario_id: int, **datos):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "CALL sp_update_user(%s, %s, %s, %s, %s, %s)",
+                    (
+                        usuario_id,
+                        datos.get("Nombre"),
+                        datos.get("Email"),
+                        _hash_password(datos["Contrasena"]) if datos.get("Contrasena") else None,
+                        datos.get("Telefono"),
+                        datos.get("RolID"),
+                    ),
+                )
+                return cur.fetchone()
+        finally:
+            conn.close()
 
     @staticmethod
-    def eliminar_usuario(db: Session, usuario_id: int):
-        usuario = db.query(Usuario).filter(Usuario.UsuarioID == usuario_id).first()
-        if not usuario:
-            return False
-
-        # Eliminar cliente asociado
-        cliente = db.query(Cliente).filter(Cliente.UsuarioID == usuario_id).first()
-        if cliente:
-            db.delete(cliente)
-
-        db.delete(usuario)
-        db.commit()
-        return True
+    def eliminar_usuario(db, usuario_id: int):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_delete_user(%s)", (usuario_id,))
+                res = cur.fetchone()
+                return res and res.get("affected", 0) > 0
+        finally:
+            conn.close()

@@ -1,53 +1,94 @@
-from sqlalchemy.orm import Session
-from app.models.carrito import Carrito
-from app.models.carrito_detalle import CarritoDetalle
-from app.models.productos import Producto
-from datetime import datetime
+import pymysql
+from pymysql.cursors import DictCursor
+from app.config import DB_USER, DB_PASS, DB_HOST, DB_NAME
+
+
+def _get_connection():
+    return pymysql.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASS,
+        db=DB_NAME,
+        cursorclass=DictCursor,
+        autocommit=True,
+    )
+
 
 class CarritoRepository:
 
     @staticmethod
-    def obtener_carrito_activo(db: Session, cliente_id: int) -> Carrito | None:
-        return db.query(Carrito).filter(
-            Carrito.ClienteID == cliente_id,
-            Carrito.Activo == True
-        ).first()
+    def obtener_carrito_activo(db, cliente_id: int):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_get_active_cart(%s)", (cliente_id,))
+                return cur.fetchone()
+        finally:
+            conn.close()
 
     @staticmethod
-    def crear_carrito(db: Session, cliente_id: int) -> Carrito:
-        nuevo = Carrito(
-            ClienteID=cliente_id,
-            FechaCreacion=datetime.now(),
-            Activo=True
-        )
-        db.add(nuevo)
-        db.commit()
-        db.refresh(nuevo)
-        return nuevo
+    def crear_carrito(db, cliente_id: int):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_create_cart(%s)", (cliente_id,))
+                return cur.fetchone()
+        finally:
+            conn.close()
 
     @staticmethod
-    def agregar_producto(db: Session, carrito_id: int, producto_id: int, cantidad: int) -> CarritoDetalle | None:
-        producto = db.query(Producto).filter(Producto.ProductoID == producto_id).first()
-        if not producto:
-            print("Producto no encontrado.")
-            return None
+    def agregar_producto(db, carrito_id: int, producto_id: int, cantidad: int):
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_add_to_cart(%s, %s, %s)", (carrito_id, producto_id, cantidad))
+                return cur.fetchone()
+        finally:
+            conn.close()
 
-        if producto.Stock < cantidad:
-            print(f"Stock insuficiente. Disponible: {producto.Stock}")
-            return None
+    @staticmethod
+    def obtener_carritos_con_detalle_por_cliente(db, cliente_id: int):
+        """Devuelve lista de filas con carrito + detalle para un cliente."""
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_get_cart_with_details_by_cliente(%s)", (cliente_id,))
+                return cur.fetchall()
+        finally:
+            conn.close()
 
-        detalle = CarritoDetalle(
-            CarritoID=carrito_id,
-            ProductoID=producto_id,
-            Cantidad=cantidad,
-            PrecioUnitario=producto.Precio
-        )
+    @staticmethod
+    def vaciar_carrito_por_id(db, carrito_id: int):
+        """Llama a sp_empty_cart_by_id para restaurar stock, eliminar detalles y marcar carrito inactivo.
 
-        # Descontar stock
-        producto.Stock -= cantidad
+        Retorna un diccionario como {'deleted_details': N} o None en error.
+        """
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_empty_cart_by_id(%s)", (carrito_id,))
+                return cur.fetchone()
+        finally:
+            conn.close()
 
-        db.add(detalle)
-        db.commit()
-        db.refresh(detalle)
-        print(f"Producto agregado al carrito. Subtotal: ${float(producto.Precio) * cantidad:.2f}")
-        return detalle
+    @staticmethod
+    def crear_pedido_desde_carrito(db, carrito_id: int, metodo_pago_id: int = 1):
+        """Crea un pedido a partir del carrito: inserta Pedidos y PedidoDetalle, borra detalles y marca carrito inactivo."""
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_create_order_from_cart(%s, %s)", (carrito_id, metodo_pago_id))
+                return cur.fetchone()
+        finally:
+            conn.close()
+
+    @staticmethod
+    def obtener_pedido_por_id(db, pedido_id: int):
+        """Devuelve filas del pedido y sus detalles llamando a sp_get_order_by_id."""
+        conn = _get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("CALL sp_get_order_by_id(%s)", (pedido_id,))
+                return cur.fetchall()
+        finally:
+            conn.close()

@@ -3,3 +3,4 @@ pymysql
 flask
 PyJWT
 pycryptodome
+python-dotenv
