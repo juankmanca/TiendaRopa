@@ -3,6 +3,7 @@ from app.routes.productos_routes import productos_bp
 from app.routes.usuarios_routes import usuarios_bp
 from app.routes.carrito_routes import carrito_bp
 from app.routes.auth_routes import auth_bp
+from app.routes.pedidos_routes import pedidos_bp
 
 def create_app():
     app = Flask(__name__)
@@ -10,6 +11,7 @@ def create_app():
     app.register_blueprint(usuarios_bp, url_prefix="/usuarios")
     app.register_blueprint(carrito_bp, url_prefix="/carrito")
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(pedidos_bp, url_prefix="/pedidos")
 
     @app.route("/ping", methods=["GET"])
     def ping():

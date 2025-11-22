@@ -71,24 +71,3 @@ class CarritoRepository:
         finally:
             conn.close()
 
-    @staticmethod
-    def crear_pedido_desde_carrito(db, carrito_id: int, metodo_pago_id: int = 1):
-        """Crea un pedido a partir del carrito: inserta Pedidos y PedidoDetalle, borra detalles y marca carrito inactivo."""
-        conn = _get_connection()
-        try:
-            with conn.cursor() as cur:
-                cur.execute("CALL sp_create_order_from_cart(%s, %s)", (carrito_id, metodo_pago_id))
-                return cur.fetchone()
-        finally:
-            conn.close()
-
-    @staticmethod
-    def obtener_pedido_por_id(db, pedido_id: int):
-        """Devuelve filas del pedido y sus detalles llamando a sp_get_order_by_id."""
-        conn = _get_connection()
-        try:
-            with conn.cursor() as cur:
-                cur.execute("CALL sp_get_order_by_id(%s)", (pedido_id,))
-                return cur.fetchall()
-        finally:
-            conn.close()

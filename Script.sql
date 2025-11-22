@@ -410,6 +410,58 @@ END;
 
     DELIMITER ;
 
+    -- PROCEDIMIENTO PARA ELIMINAR UN PEDIDO Y RESTAURAR STOCK
+    DELIMITER //
+    CREATE PROCEDURE sp_delete_order_by_id(IN p_pedido_id INT)
+    BEGIN
+        proc: BEGIN
+            DECLARE done INT DEFAULT 0;
+            DECLARE cur_prod INT;
+            DECLARE cur_cant INT;
+            DECLARE cur CURSOR FOR SELECT ProductoID, Cantidad FROM PedidoDetalle WHERE PedidoID = p_pedido_id;
+            DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+            OPEN cur;
+            read_loop: LOOP
+                FETCH cur INTO cur_prod, cur_cant;
+                IF done = 1 THEN
+                    LEAVE read_loop;
+                END IF;
+                -- Restaurar stock
+                UPDATE Productos SET Stock = Stock + cur_cant WHERE ProductoID = cur_prod;
+            END LOOP;
+            CLOSE cur;
+
+            DELETE FROM PedidoDetalle WHERE PedidoID = p_pedido_id;
+            DELETE FROM Pedidos WHERE PedidoID = p_pedido_id;
+
+            SELECT ROW_COUNT() AS deleted;
+        END proc;
+    END;
+    //
+
+    -- PROCEDIMIENTO PARA REGISTRAR UN PAGO Y MARCAR PEDIDO COMO PAGADO
+    DELIMITER //
+    CREATE PROCEDURE sp_pay_order(
+        IN p_pedido_id INT,
+        IN p_monto DECIMAL(10,2),
+        IN p_estado_pago VARCHAR(50)
+    )
+    BEGIN
+        proc: BEGIN
+            INSERT INTO Pagos (PedidoID, FechaPago, Monto, EstadoPago)
+            VALUES (p_pedido_id, NOW(), p_monto, p_estado_pago);
+            SET @payid = LAST_INSERT_ID();
+
+            UPDATE Pedidos SET EstadoPedido = p_estado_pago WHERE PedidoID = p_pedido_id;
+
+            SELECT @payid AS PagoID, 0 AS status, 'ok' AS message;
+        END proc;
+    END;
+    //
+
+    DELIMITER ;
+
     -- PROCEDIMIENTO PARA OBTENER UN PEDIDO CON SUS DETALLES
     DELIMITER //
     CREATE PROCEDURE sp_get_order_by_id(IN p_pedido_id INT)

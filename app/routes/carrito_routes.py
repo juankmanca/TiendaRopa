@@ -25,24 +25,3 @@ def vaciar_carrito(cliente_id):
     status = 200 if res.get("ok") else 400
     return jsonify(res), status
 
-
-@carrito_bp.route("/<int:cliente_id>/realizar_pedido", methods=["POST"])
-def realizar_pedido(cliente_id):
-    """Crea un pedido a partir del carrito activo del cliente.
-
-    Body JSON opcional: { "metodo_pago_id": 1 }
-    """
-    data = request.get_json() or {}
-    metodo_pago_id = data.get("metodo_pago_id", 1)
-    res = service.realizar_pedido(cliente_id, metodo_pago_id)
-    status = 200 if res.get("ok") else 400
-    return jsonify(res), status
-
-
-@carrito_bp.route("/pedido/<int:pedido_id>", methods=["GET"])
-def ver_pedido(pedido_id):
-    """Obtiene la información completa de un pedido (header + detalle)."""
-    pedido = service.ver_pedido(pedido_id)
-    if not pedido:
-        return jsonify({"error": "Pedido no encontrado"}), 404
-    return jsonify({"pedido": pedido}), 200
